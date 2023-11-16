@@ -24,13 +24,12 @@ namespace Calculator
             string inputVector;
             Console.Write("Введите вектор функции: ");
             bool isCorrectSize = false;
+
             do
             {
                 inputVector = Console.ReadLine() ?? "";
-                if (inputVector is null || (inputVector.Length != 16 && !ContainsOnesAndZeros(inputVector)))
-                    Console.Write("Ошибка, введите вектор заново: \nВектор должен состоять из 16 значений 0 и 1\n");
-                else if (inputVector.Length == 16 && FullVectorZerosOrOnes(inputVector))
-                    Console.Write("Ошибка, введите вектор заново: \nВектор не может состоять только из 0 или 1\n");
+                if (!IsValidVector(inputVector))
+                    Console.Write("Ошибка, введите вектор заново: Вектор должен состоять из 16 значений 0 и 1\n");
                 else
                     isCorrectSize = true;
             } while (!isCorrectSize);
@@ -38,24 +37,21 @@ namespace Calculator
             return inputVector;
         }
 
-        static bool ContainsOnesAndZeros(string inputVector)
+        static bool IsValidVector(string inputVector)
         {
-            for (int i = 0; i < inputVector.Length; i++)
-            {
-                if (inputVector[i] != '1' || inputVector[i] != '0')
-                    return false;
-            }
-            return true;
+            return !(inputVector is null || inputVector.Length != 16 || !ContainsOnlyZeroAndOne(inputVector)
+                     || FullVectorZerosOrOnes(inputVector));
+        }
+
+        static bool ContainsOnlyZeroAndOne(string inputVector)
+        {
+            return inputVector.All(c => c == '1' || c == '0');
         }
 
         static bool FullVectorZerosOrOnes(string inputVector)
         {
-            if (inputVector == "1111111111111111" || inputVector == "0000000000000000")
-                return true;
-            else
-                return false;
+            return inputVector == new String('1', 16) || inputVector == new String('0', 16);
         }
-
         public static string CreateSelectedVector(string vector)
         {
             string[] arrRows = {
@@ -89,11 +85,12 @@ namespace Calculator
 
         static void Task(string vector)
         {
-            if(vector is null || vector == "")
+            if (string.IsNullOrEmpty(vector))
             {
                 Console.WriteLine("Вектор не создан");
                 return;
             }
+
             var truthTable = new List<string>();
             var constituents = new List<string>();
             CreateTruthTable(vector, ref truthTable, ref constituents);
@@ -112,11 +109,15 @@ namespace Calculator
             Console.WriteLine("Сокращенное ДНФ");
             PrintDNF(gluedConstituents);
 
-            Console.WriteLine("Таблица имплиакнт");
+            Console.WriteLine("Таблица импликант");
             implicantTable = new List<List<bool>>();
             CreateImplicantTable(constituents, gluedConstituents);
             PrintImplicantTable(constituents, gluedConstituents);
 
+            ProcessAndPrintResults(gluedConstituents);
+        }
+        static void ProcessAndPrintResults(List<string> gluedConstituents)
+        {
             var minRows = new List<int>();
             minRows = FindRowsMinNum(minRows, 0, 0);
             minRows.Sort();
@@ -124,120 +125,79 @@ namespace Calculator
             PrintResult(minRows, gluedConstituents);
         }
 
-        static void CreateTruthTable(string vector, ref List<string> truthTable, ref List<string> constituents)
+        static List<string> CreateTruthTable(string vector, ref List<string> truthTable, ref List<string> constituents)
         {
-            int numeralSystem = 2;
+            truthTable = new List<string>();
+            constituents = new List<string>();
+            string alphabet = "xyzw";
+            string invertedAlphabet = "XYZW";
+
             for (int i = 0; i < 16; i++)
             {
-                string binaryNum = "";
-                CalculateBinNum(i, numeralSystem, ref binaryNum);
-                AddZerosToBinNum(i, ref binaryNum);
-
-                binaryNum = ReverseString(binaryNum);
+                string binaryNum = Convert.ToString(i, 2).PadLeft(4, '0');
 
                 if (vector[i] == '1')
                 {
-                    string inLetters;
-                    inLetters = InLettersBinNum(binaryNum);
-                    constituents.Add(inLetters);
+                    constituents.Add(ConvertToLetters(binaryNum, alphabet, invertedAlphabet));
                 }
 
-                string toAddToArr = binaryNum + "|" + vector[i];
-                truthTable.Add(toAddToArr);
+                truthTable.Add($"{binaryNum}|{vector[i]}");
             }
+
+            return truthTable;
         }
 
-        static void CalculateBinNum(int n, int numeralSystem, ref string binaryNum)
+        static string ConvertToLetters(string binaryNum, string alphabet, string invertedAlphabet)
         {
-            var str = new StringBuilder();
-            while (n > 0)
+            var result = new StringBuilder();
+            for (int i = 0; i < binaryNum.Length; i++)
             {
-                str.Append(n % numeralSystem);
-                n /= numeralSystem;
+                result.Append(binaryNum[i] == '1' ? alphabet[i] : invertedAlphabet[i]);
             }
-            binaryNum = str.ToString();
-        }
-        static void AddZerosToBinNum(int tmpN, ref string result)
-        {
-            var str = new StringBuilder();
-            str.Append(result);
-            if (tmpN == 0)
-                str.Append("0000");
-            else if (tmpN < 2)
-                str.Append("000");
-            else if (tmpN < 4)
-                str.Append("00");
-            else if (tmpN < 8)
-                str.Append('0');
-
-            result = str.ToString();
-        }
-        static string ReverseString(string s)
-        {
-            char[] charArray = s.ToCharArray();
-            Array.Reverse(charArray);
-            return new string(charArray);
-        }
-
-        static string InLettersBinNum(string binNumber)
-        {
-            string al = "xyzw", inverseAl = "XYZW";
-            var str = new StringBuilder();
-            for (int i = 0, j = -1; i < binNumber.Length; i++)
-            {
-                j++;
-                if (binNumber[i] == '1')
-                    str.Append(al[j]);
-                else
-                    str.Append(inverseAl[j]);
-            }
-            return str.ToString();
+            return result.ToString();
         }
 
         static void PrintTruthTable(List<string> truthTable)
         {
             Console.WriteLine("Таблица истинности\nXYZW|F\n");
-            for (int i = 0; i < truthTable.Count; i++)
+            foreach (var row in truthTable)
             {
-                Console.Write(truthTable[i] + "\n");
+                Console.WriteLine(row);
             }
             Console.WriteLine();
         }
 
         static void PrintDNF(List<string> constituents)
         {
-            Console.Write($"F = {PrintConstituent(constituents[0])}");
-            for (int i = 1; i < constituents.Count; i++)
-            {
-                Console.Write($" + {PrintConstituent(constituents[i])}");
-            }
-            Console.WriteLine("\n");
+            string arbitraryFormula = string.Join(" + ", constituents.Select(c => PrintConstituent(c)));
+            Console.WriteLine($"F = {arbitraryFormula}\n");
         }
+
         static string PrintConstituent(string constituent)
         {
-            string al = "xyzw";
+            string variables = "xyzw";
             var res = new StringBuilder();
-            for (int i = 0; i < constituent.Length; i++)
+
+            foreach (char c in constituent)
             {
-                if (constituent[i] == 'X')
-                    res.Append("!" + al[0]);
-                if (constituent[i] == 'Y')
-                    res.Append("!" + al[1]);
-                if (constituent[i] == 'Z')
-                    res.Append("!" + al[2]);
-                if (constituent[i] == 'W')
-                    res.Append("!" + al[3]);
-                if (constituent[i] == 'x')
-                    res.Append(al[0]);
-                if (constituent[i] == 'y')
-                    res.Append(al[1]);
-                if (constituent[i] == 'z')
-                    res.Append(al[2]);
-                if (constituent[i] == 'w')
-                    res.Append(al[3]);
+                int index = variables.IndexOf(char.ToLower(c));
+
+                if (index != -1)
+                {
+                    if (char.IsLower(c))
+                    {
+                        res.Append(variables[index]);
+                    }
+                    else
+                    {
+                        res.Append("!" + variables[index]);
+                    }
+                }
             }
+
             return res.ToString();
         }
+
         //склеивание
         static void GluingConstituents(ref List<string> constituentsToGlue)
         {
