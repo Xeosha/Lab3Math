@@ -19,7 +19,7 @@ namespace Calculator
             dialog.Start();
         }
 
-        static string InputVector()
+        static string InputVector() 
         {
             string inputVector;
             Console.Write("Введите вектор функции: ");
@@ -36,7 +36,7 @@ namespace Calculator
 
             return inputVector;
         }
-
+            
         static bool IsValidVector(string inputVector)
         {
             return !(inputVector is null || inputVector.Length != 16 || !ContainsOnlyZeroAndOne(inputVector)
@@ -323,30 +323,30 @@ namespace Calculator
         }
         static void PrintConstituentsList(List<string> pairs)
         {
-            string al = "xyzw";
-            for (int i = 0; i < pairs.Count; i++)
+            Dictionary<char, string> dict = new Dictionary<char, string>()
             {
-                for (int j = 0; j < pairs[i].Length; j++)
+                {'X', "!x"},
+                {'Y', "!y"},
+                {'Z', "!z"},
+                {'W', "!w"},
+                {'x', "x"},
+                {'y', "y"},
+                {'z', "z"},
+                {'w', "w"},
+            };
+
+            foreach (var pair in pairs)
+            {
+                foreach (var ch in pair)
                 {
-                    if (pairs[i][j] == 'X')
-                        Console.Write($"!{al[0]} ");
-                    if (pairs[i][j] == 'Y')
-                        Console.Write($"!{al[1]} ");
-                    if (pairs[i][j] == 'Z')
-                        Console.Write($"!{al[2]} ");
-                    if (pairs[i][j] == 'W')
-                        Console.Write($"!{al[3]} ");
-                    if (pairs[i][j] == 'x')
-                        Console.Write($"{al[0]} ");
-                    if (pairs[i][j] == 'y')
-                        Console.Write($"{al[1]} ");
-                    if (pairs[i][j] == 'z')
-                        Console.Write($"{al[2]} ");
-                    if (pairs[i][j] == 'w')
-                        Console.Write($"{al[3]} ");
+                    if (dict.ContainsKey(ch))
+                    {
+                        Console.Write(dict[ch] + " ");
+                    }
                 }
                 Console.WriteLine();
             }
+
             Console.WriteLine();
         }
 
@@ -381,7 +381,7 @@ namespace Calculator
                 for (int j = 0; j < constituents.Count; j++)
                 {
                     bool elem = FindSubsrtInStr(gluedConstituents[i], constituents[j]);
-                    tmpMatr.Add(elem);//implicantTable[i][j] = elem;
+                    tmpMatr.Add(elem);
                 }
                 implicantTable.Add(tmpMatr);
             }
